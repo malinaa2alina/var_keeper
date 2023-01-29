@@ -1,0 +1,47 @@
+name: Pull Request To Main
+run-name: Run All Tests
+on:
+  pull_request:
+    branches:
+      - 'main'
+jobs:
+  unit_testing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Run Unit Tests
+        run: |
+          chmod +x ./test/unit-tests.sh
+          ./test/unit-tests.sh
+        
+  integration_testing:
+    needs: unit_testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install requirements
+        run: pip install -r requirements.txt
+      - name: Run app
+        run: python3 ./src/app/app.py &
+      - name: Test GET-request
+        run: |
+          ANSW=$(curl http://127.0.0.1:5000/)
+          if [ "$ANSW" != "Hello, World!" ]; then
+          exit 1
+          else
+          echo "Integration Test PASS"
+          fi
+          
+  mega_hard_testing:
+    needs: [unit_testing, integration_testing]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Run Mega Hard Tests
+        run: |
+          chmod +x ./test/all-mega-hard-tests.sh
+          ./test/all-mega-hard-tests.sh
+
