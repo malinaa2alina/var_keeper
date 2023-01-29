@@ -7,6 +7,17 @@ on:
 jobs:
   integration_testing:
     runs-on: ubuntu-latest
+    container: python:3.10.9-slim
+    services:
+      db:
+        image: mysql
+        env:
+          MYSQL_ROOT_PASSWORD: 123
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -14,11 +25,16 @@ jobs:
         run: pip install -r requirements.txt
       - name: Run app
         run: python3 ./src/app/app.py &
-      - name: Test GET-request
+      - name: Install curl
+        run: apt-get -y update; apt-get -y install curl
+      - name: Set variable a in 123
+        run: curl -X POST -F 'value=123' http://localhost:5000/var/a
+      - name: Test getting the value of a variable
         run: |
-          ANSW=$(curl http://127.0.0.1:5000/)
-          if [ "$ANSW" != "Hello, World!" ]; then
+          VALUE=$(curl http://localhost:5000/var/a)
+          if [ "$VALUE" != "123" ]; then
           exit 1
           else
           echo "Integration Test PASS"
           fi
+
